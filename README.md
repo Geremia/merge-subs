@@ -16,3 +16,6 @@ A command-line tool to merge subtitles from youtube or local srt/vtt/lrc files o
 * Exporting to srt
 * Exporting to lrc
 * Merge subtitles
+### Dependencies
+* python
+* youtube-dl
