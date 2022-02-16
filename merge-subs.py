@@ -1,7 +1,8 @@
+#!/usr/bin/python3
+
 #from __future__ import unicode_literals
 import re
 import copy
-import youtube_dl
 import sys
 import argparse
 import math
@@ -9,28 +10,11 @@ import math
 parser = argparse.ArgumentParser(description='Merge subtitles of different languages from youtube.')
 argparse.version = '1.0'
 
-parser.add_argument('-r',
-                    '--remove-japanese-lines',
-                    action='store_true',
-                    help='Removes any lines containing japanese characters.'
-)
-parser.add_argument('yt_url',
-                    metavar='yt-url',
-                    action='store',
-                    type=str,
-                    help='The youtube hyperlink from which the subtitles will be downloaded and merged from.'
-)
-parser.add_argument('export_format',
-                    metavar='export-format',
-                    action='store',
-                    type=str,
-                    help='Specifies the output format. Valid values are srt and lrc.'
-)
-parser.add_argument('languages',
+parser.add_argument('paths',
                     action='store',
                     nargs=argparse.REMAINDER,
                     type=str,
-                    help='Languages which are to be downloaded.'
+                    help='Subtitles to be merged.'
 )
 
 args = parser.parse_args()
@@ -247,50 +231,11 @@ class ManipulateSubs:
 				wf.write(concat_string+'\n')
 			wf.write('\n')
 
-	@staticmethod
-	def remove_japanese_lines(sub_dic):
-		return_sub_dic = copy.deepcopy(sub_dic)
-		for sub in return_sub_dic['subs']:
-			for lang in sub.langs:
-				for string in lang:
-					x = re.search('([\u3040-\u309f]|[\u30a0-\u30ff]|[\u2e80-\u2fd5]|[\u4e00-\u9fbf]|[\uff5f-\uff9f]|[\u3000-\u303f])', string)
-					if(x!=None):
-						lang.remove(string)
-
-		return return_sub_dic
-
-class DownloadSubs:
-	@staticmethod
-	def ydl(url, langs):
-		ydl_opts = {
-			'outtmpl': '/tmp/%(title)s.%(ext)s',
-			'writesubtitles': True,
-			'skip_download': True,
-			'subtitleslangs': langs,
-		}
-
-		with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-			ydl.download([url])
-			info_dict = ydl.extract_info(url, download=False)
-			video_title = info_dict.get('title', None).replace('/', '_')
-
-		return_paths = []
-		for lang in langs:
-			return_paths.append('/tmp/'+video_title+'.'+lang+'.vtt')
-
-		return return_paths
-
-url = args.yt_url
-langs = args.languages
-
-paths = DownloadSubs.ydl(url, langs)
-print(langs)
+paths = args.paths
 print(paths)
 dics = []
 for path in paths:
 	dics.append(ManipulateSubs.parse_vtt(path))
 dic3 = MergeSubs.merge_subs(dics, 0.75)
-if(args.remove_japanese_lines):
-	dic3 = ManipulateSubs.remove_japanese_lines(dic3)
 ManipulateSubs.write_lrc(dic3)
 ManipulateSubs.write_srt(dic3)
